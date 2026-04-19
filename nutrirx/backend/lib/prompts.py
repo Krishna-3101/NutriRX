@@ -182,12 +182,12 @@ You receive:
 2. A cuisine preference string (free text, e.g. "Dominican and some Chinese")
 3. Household member list (ages, conditions)
 
-Your job: Generate a 7-day meal plan (3 meals + 1 snack per day = 28 meals total) where:
+Your job: Generate 7 representative meals (a mix of breakfasts, lunches, dinners, and snacks) where:
 - Every meal is drawn from or inspired by the specified cuisine(s)
 - Each meal hits the nutrient targets as closely as possible
 - Meals are REAL, NAMED, CULTURALLY AUTHENTIC dishes — not invented generic food
 - Meals are appropriate for all household members (no allergens or condition-restricted foods)
-- Variety is maintained — no meal repeats more than twice in a week
+- Variety is maintained — no meal repeats
 - Preparation complexity is realistic for a working family (most meals under 45 minutes)
 
 For each meal, return:
@@ -200,12 +200,12 @@ For each meal, return:
   "ingredients": [{"name": "...", "amount": "..."}, ...],
   "instructions": ["Step 1...", "Step 2...", ...],
   "prep_time_minutes": 35,
-  "nutrition": { estimated nutrition per serving },
+  "nutrition": { "calories": 400, "protein": "20g", "carbs": "45g", "fat": "15g" },
   "image_query": "habichuelas guisadas Dominican rice beans"
 }
 
 Be specific. "Pollo Guisado" not "chicken stew". "Dal Tadka" not "lentil soup".
-Return a JSON array of 28 meal objects."""
+Return a JSON array of exactly 7 meal objects."""
 
 BUDGET_AGENT_SYSTEM = """You are BudgetAgent, a financial nutrition specialist in SNAP and WIC benefit optimization.
 

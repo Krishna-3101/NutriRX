@@ -7,7 +7,10 @@ interface Props {
 }
 
 export function ClinicalBadge({ target, size = "md" }: Props) {
-  const config = CLINICAL_COLORS[target];
+  const isRecognized = !!CLINICAL_COLORS[target];
+  const config = CLINICAL_COLORS[target] || CLINICAL_COLORS.general;
+  const labelText = isRecognized ? config.label : String(target).charAt(0).toUpperCase() + String(target).slice(1);
+
   return (
     <span
       className={`badge-clinical border ${config.tailwind} ${
@@ -18,7 +21,7 @@ export function ClinicalBadge({ target, size = "md" }: Props) {
         className="w-1.5 h-1.5 rounded-full inline-block"
         style={{ backgroundColor: config.hex }}
       />
-      {config.label}
+      {labelText}
     </span>
   );
 }

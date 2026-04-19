@@ -1,5 +1,6 @@
 # User request: do not track Markdown in this repo
 *.md
+!README.md
 
 .DS_Store
 

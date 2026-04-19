@@ -36,17 +36,40 @@ Each shopping item: name, quantity, estimated_cost_usd, clinical_targets (string
 """
 
         def _call() -> dict[str, Any]:
+            import time
+            import logging
+            logger = logging.getLogger(__name__)
             client = _make_client()
             full = f"{BUDGET_AGENT_SYSTEM}\n\n{prompt}"
-            response = client.models.generate_content(
-                model=flash_model_name(),
-                contents=full,
-                config=genai_types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    max_output_tokens=8192,
-                ),
-            )
-            text = response.text or "{}"
-            return json.loads(text)
+            
+            for attempt in range(3):
+                try:
+                    response = client.models.generate_content(
+                        model=flash_model_name(),
+                        contents=full,
+                        config=genai_types.GenerateContentConfig(
+                            response_mime_type="application/json",
+                            max_output_tokens=8192,
+                        ),
+                    )
+                    text = response.text or "{}"
+                    
+                    text = text.strip()
+                    if text.startswith("```json"):
+                        text = text[7:]
+                    elif text.startswith("```"):
+                        text = text[3:]
+                    if text.endswith("```"):
+                        text = text[:-3]
+                    text = text.strip()
+
+                    return json.loads(text)
+                except Exception as e:
+                    if attempt == 2:
+                        raise
+                    logger.warning(f"BudgetAgent attempt {attempt + 1} failed: {e}. Retrying...")
+                    time.sleep(2)
+            
+            return {}
 
         return await asyncio.to_thread(_call)
