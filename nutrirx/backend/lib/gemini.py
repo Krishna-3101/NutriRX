@@ -11,6 +11,8 @@ _PLACEHOLDER_KEYS = {
     "changeme",
 }
 
+from lib.gemini_quota import is_quota_exceeded_error
+
 _FATAL_ERROR_FRAGMENTS = (
     "api key not valid",
     "invalid api key",
@@ -48,5 +50,12 @@ def user_facing_generation_error(exc: Exception) -> str:
         return (
             "Gemini API key is invalid or missing. Update GEMINI_API_KEY in "
             "nutrirx/backend/.env and try again."
+        )
+    if is_quota_exceeded_error(exc):
+        return (
+            "Gemini API quota or rate limit was exceeded (429). The free tier allows a small number of "
+            "requests per minute and per day per model. Options: wait a few minutes (or until tomorrow) "
+            "and try again; enable billing on your Google AI project; or set GEMINI_FLASH_MODEL=gemini-1.5-flash "
+            "in nutrirx/backend/.env to use a different model quota. Details: https://ai.google.dev/gemini-api/docs/rate-limits"
         )
     return f"Plan generation failed: {exc!s}"

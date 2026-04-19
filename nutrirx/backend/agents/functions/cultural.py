@@ -9,12 +9,30 @@ from google.genai import types as genai_types
 
 from agents.specialists.base_agent import flash_model_name
 from lib.gemini import make_gemini_client
+from lib.gemini_quota import sleep_before_gemini_retry
 from lib.prompts import CULTURAL_AGENT_SYSTEM
 from lib.types import IntakeForm
 
 
 def _make_client() -> genai.Client:
     return make_gemini_client()
+
+
+def _normalize_meal_list(items: list[Any]) -> list[dict[str, Any]]:
+    """Accept flat meal arrays or per-day bundles `{ meals: [...] }` from the model."""
+    out: list[dict[str, Any]] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        nested = item.get("meals")
+        if isinstance(nested, list):
+            for m in nested:
+                if isinstance(m, dict):
+                    out.append(m)
+            continue
+        if item.get("name") or item.get("meal_type") or item.get("mealType"):
+            out.append(item)
+    return out
 
 
 class CulturalAgent:
@@ -28,24 +46,26 @@ SNAP budget: ${intake.snap_weekly_budget}/week
 Merged clinical nutrient targets (daily, for the whole household):
 {json.dumps(merged_targets, indent=2)}
 
-Generate the meal plan as a JSON array of exactly 7 meal objects.
+Generate the meal plan as a JSON array of exactly 28 meal objects (7 days × 4 meal types), in order:
+Mon breakfast, Mon lunch, Mon dinner, Mon snack, Tue breakfast, … through Sun snack.
+Each object must include meal_type one of: breakfast, lunch, dinner, snack — four per calendar day.
 """
 
         def _call() -> list[dict[str, Any]]:
-            import time
             import logging
             logger = logging.getLogger(__name__)
             client = _make_client()
             full = f"{CULTURAL_AGENT_SYSTEM}\n\n{prompt}"
             
-            for attempt in range(3):
+            max_attempts = 5
+            for attempt in range(max_attempts):
                 try:
                     response = client.models.generate_content(
                         model=flash_model_name(),
                         contents=full,
                         config=genai_types.GenerateContentConfig(
                             response_mime_type="application/json",
-                            max_output_tokens=8192,
+                            max_output_tokens=32768,
                         ),
                     )
                     text = response.text or "[]"
@@ -62,15 +82,24 @@ Generate the meal plan as a JSON array of exactly 7 meal objects.
                     
                     data = json.loads(text)
                     if isinstance(data, dict) and "meals" in data:
-                        return list(data["meals"])
+                        return _normalize_meal_list(list(data["meals"]))
+                    if isinstance(data, dict) and "days" in data:
+                        days = data["days"]
+                        if isinstance(days, list):
+                            flat: list[dict[str, Any]] = []
+                            for d in days:
+                                if isinstance(d, dict) and isinstance(d.get("meals"), list):
+                                    flat.extend(d["meals"])
+                            if flat:
+                                return _normalize_meal_list(flat)
                     if isinstance(data, list):
-                        return data
+                        return _normalize_meal_list(data)
                     return []
                 except Exception as e:
-                    if attempt == 2:
+                    if attempt == max_attempts - 1:
                         raise
-                    logger.warning(f"CulturalAgent attempt {attempt + 1} failed: {e}. Retrying...")
-                    time.sleep(2)
+                    logger.warning("CulturalAgent attempt %s failed: %s", attempt + 1, e)
+                    sleep_before_gemini_retry(e, attempt, max_attempts)
             
             return []
 

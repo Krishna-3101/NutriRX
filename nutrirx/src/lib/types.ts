@@ -104,6 +104,7 @@ export interface Ingredient {
   amount: string;
   usdaFoodId?: string;
   estimatedCostUSD?: number;
+  isWicEligible?: boolean;
 }
 
 export interface Meal {
@@ -203,4 +204,28 @@ export interface WeekRecord {
   avgSodiumMg: number;
   avgIronMg: number;
   gradeId?: string;
+}
+
+/** One row from GET /api/history/trends */
+export interface WeekTrendRow {
+  week: number;
+  adherence: number | null;
+  glycemicLoad: number | null;
+  sodiumMg: number | null;
+  ironMg: number | null;
+  createdAt: string;
+}
+
+/** One plan from GET /api/history */
+export interface HistoryPlanListItem {
+  id: string;
+  createdAt: string;
+  adherenceScore: number | null;
+  summary: {
+    totalMeals: number;
+    estimatedCost?: number;
+    cuisines?: string;
+    householdSize?: number;
+  };
+  intakeSnapshot?: IntakeForm;
 }

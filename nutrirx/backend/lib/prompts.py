@@ -182,7 +182,10 @@ You receive:
 2. A cuisine preference string (free text, e.g. "Dominican and some Chinese")
 3. Household member list (ages, conditions)
 
-Your job: Generate 7 representative meals (a mix of breakfasts, lunches, dinners, and snacks) where:
+Your job: Generate a full week of meals: exactly **28** dishes (7 days × breakfast, lunch, dinner, snack), in **fixed order**:
+Monday breakfast, Monday lunch, Monday dinner, Monday snack, then Tuesday through Sunday the same way.
+Each day must use all four `meal_type` values exactly once (`breakfast`, `lunch`, `dinner`, `snack`).
+Constraints:
 - Every meal is drawn from or inspired by the specified cuisine(s)
 - Each meal hits the nutrient targets as closely as possible
 - Meals are REAL, NAMED, CULTURALLY AUTHENTIC dishes — not invented generic food
@@ -200,17 +203,30 @@ For each meal, return:
   "ingredients": [{"name": "...", "amount": "..."}, ...],
   "instructions": ["Step 1...", "Step 2...", ...],
   "prep_time_minutes": 35,
-  "nutrition": { "calories": 400, "protein": "20g", "carbs": "45g", "fat": "15g" },
+  "nutrition": {
+    "calories_kcal": 400,
+    "protein_g": 20,
+    "carbs_g": 45,
+    "fiber_g": 8,
+    "fat_g": 15,
+    "sodium_mg": 400,
+    "iron_mg": 3,
+    "potassium_mg": 600,
+    "calcium_mg": 200,
+    "folate_mcg": 120,
+    "vitamin_d_iu": 200,
+    "omega3_g": 0.5
+  },
   "image_query": "habichuelas guisadas Dominican rice beans"
 }
 
 Be specific. "Pollo Guisado" not "chicken stew". "Dal Tadka" not "lentil soup".
-Return a JSON array of exactly 7 meal objects."""
+Return **only** a JSON array of exactly **28** meal objects in the order described above (no wrapper object, no markdown)."""
 
 BUDGET_AGENT_SYSTEM = """You are BudgetAgent, a financial nutrition specialist in SNAP and WIC benefit optimization.
 
 You receive:
-1. A list of all ingredients across the 7-day meal plan
+1. A list of all ingredients across the full 7-day meal plan (28 meals)
 2. Weekly SNAP budget (dollars)
 3. WIC eligibility (boolean)
 4. Household size

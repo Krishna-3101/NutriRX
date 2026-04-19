@@ -9,6 +9,7 @@ import google.genai as genai
 from google.genai import types as genai_types
 
 from lib.gemini import make_gemini_client
+from lib.gemini_quota import sleep_before_gemini_retry
 from lib.types import HouseholdMember, IntakeForm
 
 
@@ -38,16 +39,28 @@ Generate your clinical nutrition targets for this patient.
 """
 
         def _call() -> dict[str, Any]:
+            import logging
+
+            logger = logging.getLogger(__name__)
             client = _make_client()
             full = f"{self.system_prompt}\n\n{prompt}"
-            response = client.models.generate_content(
-                model=flash_model_name(),
-                contents=full,
-                config=genai_types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                ),
-            )
-            text = response.text or "{}"
-            return json.loads(text)
+            max_attempts = 5
+            for attempt in range(max_attempts):
+                try:
+                    response = client.models.generate_content(
+                        model=flash_model_name(),
+                        contents=full,
+                        config=genai_types.GenerateContentConfig(
+                            response_mime_type="application/json",
+                        ),
+                    )
+                    text = response.text or "{}"
+                    return json.loads(text)
+                except Exception as e:
+                    if attempt == max_attempts - 1:
+                        raise
+                    logger.warning("%s attempt %s failed: %s", self.agent_name, attempt + 1, e)
+                    sleep_before_gemini_retry(e, attempt, max_attempts)
+            return {}
 
         return await asyncio.to_thread(_call)

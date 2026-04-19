@@ -6,7 +6,7 @@ const STEPS = [
   { label: "Household",        routes: ["/intake"] },
   { label: "Budget & culture", routes: ["/intake"] },
   { label: "Generating",       routes: ["/generate"] },
-  { label: "Your NutriRx",     routes: ["/plan"] },
+  { label: "Your NutriRx",     routes: ["/plan", "/plan/shopping"] },
   { label: "Receipt & history", routes: ["/receipt", "/history"] },
 ];
 

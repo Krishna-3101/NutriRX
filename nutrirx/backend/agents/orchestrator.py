@@ -21,7 +21,8 @@ from agents.specialists.pediatric import PediatricAgent
 from agents.specialists.postpartum import PostpartumAgent
 from agents.specialists.prediabetes import PrediabetesAgent
 from agents.specialists.pregnancy import PregnancyAgent
-from lib.gemini import is_fatal_gemini_error, make_gemini_client
+from lib.gemini import is_fatal_gemini_error, make_gemini_client, user_facing_generation_error
+from lib.gemini_quota import is_quota_exceeded_error, sleep_before_gemini_retry
 from lib.prompts import ORCHESTRATOR_SYSTEM
 from lib.types import IntakeForm
 
@@ -77,6 +78,8 @@ async def run_pipeline(intake: IntakeForm) -> AsyncIterator[dict[str, Any]]:
             logger.exception("Specialist %s failed for member %s", agent.agent_name, member.nickname)
             if is_fatal_gemini_error(exc):
                 raise RuntimeError(str(exc)) from exc
+            if is_quota_exceeded_error(exc):
+                raise RuntimeError(user_facing_generation_error(exc)) from exc
             result = {
                 "clinical_priority": "Model error — using conservative defaults.",
                 "nutrient_targets": {},
@@ -107,14 +110,23 @@ Household profile:
     def _negotiate() -> dict[str, Any]:
         client = _make_client()
         full = f"{ORCHESTRATOR_SYSTEM}\n\n{negotiation_prompt}"
-        response = client.models.generate_content(
-            model=pro_model_name(),
-            contents=full,
-            config=genai_types.GenerateContentConfig(
-                response_mime_type="application/json",
-            ),
-        )
-        return json.loads(response.text or "{}")
+        max_attempts = 5
+        for attempt in range(max_attempts):
+            try:
+                response = client.models.generate_content(
+                    model=pro_model_name(),
+                    contents=full,
+                    config=genai_types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                    ),
+                )
+                return json.loads(response.text or "{}")
+            except Exception as e:
+                if attempt == max_attempts - 1:
+                    raise
+                logger.warning("Negotiation attempt %s failed: %s", attempt + 1, e)
+                sleep_before_gemini_retry(e, attempt, max_attempts)
+        return {}
 
     try:
         negotiation = await asyncio.to_thread(_negotiate)
@@ -122,6 +134,8 @@ Household profile:
         logger.exception("Negotiation step failed")
         if is_fatal_gemini_error(exc):
             raise RuntimeError(str(exc)) from exc
+        if is_quota_exceeded_error(exc):
+            raise RuntimeError(user_facing_generation_error(exc)) from exc
         negotiation = {
             "conflicts_found": [],
             "merged_targets": {},
@@ -168,6 +182,8 @@ Household profile:
         logger.exception("Cultural agent failed")
         if is_fatal_gemini_error(exc):
             raise RuntimeError(str(exc)) from exc
+        if is_quota_exceeded_error(exc):
+            raise RuntimeError(user_facing_generation_error(exc)) from exc
         meal_plan = []
         yield {
             "agent": "CulturalAgent",
@@ -193,6 +209,8 @@ Household profile:
         logger.exception("Budget agent failed")
         if is_fatal_gemini_error(exc):
             raise RuntimeError(str(exc)) from exc
+        if is_quota_exceeded_error(exc):
+            raise RuntimeError(user_facing_generation_error(exc)) from exc
         shopping = {"categories": [], "total_estimated_cost": 0.0, "exceeds_snap_budget": False}
         yield {
             "agent": "BudgetAgent",

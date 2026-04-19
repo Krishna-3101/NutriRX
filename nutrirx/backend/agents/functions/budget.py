@@ -9,6 +9,7 @@ from google.genai import types as genai_types
 
 from agents.specialists.base_agent import flash_model_name
 from lib.gemini import make_gemini_client
+from lib.gemini_quota import sleep_before_gemini_retry
 from lib.prompts import BUDGET_AGENT_SYSTEM
 from lib.types import IntakeForm
 
@@ -36,13 +37,13 @@ Each shopping item: name, quantity, estimated_cost_usd, clinical_targets (string
 """
 
         def _call() -> dict[str, Any]:
-            import time
             import logging
             logger = logging.getLogger(__name__)
             client = _make_client()
             full = f"{BUDGET_AGENT_SYSTEM}\n\n{prompt}"
             
-            for attempt in range(3):
+            max_attempts = 5
+            for attempt in range(max_attempts):
                 try:
                     response = client.models.generate_content(
                         model=flash_model_name(),
@@ -65,10 +66,10 @@ Each shopping item: name, quantity, estimated_cost_usd, clinical_targets (string
 
                     return json.loads(text)
                 except Exception as e:
-                    if attempt == 2:
+                    if attempt == max_attempts - 1:
                         raise
-                    logger.warning(f"BudgetAgent attempt {attempt + 1} failed: {e}. Retrying...")
-                    time.sleep(2)
+                    logger.warning("BudgetAgent attempt %s failed: %s", attempt + 1, e)
+                    sleep_before_gemini_retry(e, attempt, max_attempts)
             
             return {}
 
