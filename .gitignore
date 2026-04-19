@@ -1,0 +1,14 @@
+# User request: do not track Markdown in this repo
+*.md
+
+.DS_Store
+
+# Python
+**/__pycache__/
+*.py[cod]
+*.pyo
+
+# Local databases / secrets
+*.db
+.env
+.env.local

@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  /* ── Colors ───────────────────────────────────────────────── */
+  --color-background:          #080810;
+  --color-background-surface:  #0F0F1A;
+  --color-background-card:     #151524;
+  --color-background-elevated: #1A1A2E;
+
+  --color-border:        #1E1E35;
+  --color-border-subtle: #15152A;
+  --color-border-strong: #2E2E50;
+
+  --color-text-primary:   #F0EEF8;
+  --color-text-secondary: #8884A8;
+  --color-text-muted:     #4A4870;
+  --color-text-inverse:   #080810;
+
+  --color-accent:        #6C63FF;
+  --color-accent-hover:  #7C74FF;
+  --color-accent-subtle: #1A1840;
+
+  /* Clinical badge colors — never change these */
+  --color-clinical-glycemic:   #F59E0B;
+  --color-clinical-bp:         #3B82F6;
+  --color-clinical-iron:       #F43F5E;
+  --color-clinical-folate:     #8B5CF6;
+  --color-clinical-pediatric:  #14B8A6;
+  --color-clinical-cholesterol:#6366F1;
+  --color-clinical-general:    #64748B;
+
+  /* ── Typography ───────────────────────────────────────────── */
+  --font-display: "Syne", sans-serif;
+  --font-body:    "DM Sans", sans-serif;
+  --font-mono:    "JetBrains Mono", monospace;
+
+  /* ── Shadows ──────────────────────────────────────────────── */
+  --shadow-glow-accent: 0 0 40px -10px rgba(108,99,255,0.4);
+  --shadow-glow-sm:     0 0 20px -8px rgba(108,99,255,0.3);
+  --shadow-card:        0 1px 1px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+
+  /* ── Animations ───────────────────────────────────────────── */
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-fade-up:    fadeUp 0.5s ease forwards;
+  --animate-shimmer:    shimmer 2s linear infinite;
+
+  /* ── Keyframes ────────────────────────────────────────────── */
+  @keyframes fadeUp {
+    0%   { opacity: 0; transform: translateY(12px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+}
+
+:root {
+  --background: #080810;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #080810;
+  color: #F0EEF8;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #080810;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0F0F1A; }
+::-webkit-scrollbar-thumb { background: #2E2E50; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #6C63FF; }
+
+/* Selection */
+::selection { background: rgba(108,99,255,0.3); color: #F0EEF8; }
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid #6C63FF;
+  outline-offset: 2px;
+}
+
+/* Noise overlay utility */
+.noise-overlay::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Clinical badge base */
+.badge-clinical {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Hero gradient background utility */
+.bg-hero-glow {
+  background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(108,99,255,0.15), transparent);
+}
+
+@keyframes nutrirxAmbient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.nutrirx-generate-ambient {
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(108, 99, 255, 0.12), transparent 55%),
+    radial-gradient(ellipse at 80% 70%, rgba(108, 99, 255, 0.08), transparent 50%);
+  background-size: 200% 200%;
+  animation: nutrirxAmbient 8s ease-in-out infinite;
+}
