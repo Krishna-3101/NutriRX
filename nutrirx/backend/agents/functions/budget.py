@@ -2,19 +2,19 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 from typing import Any
 
 import google.genai as genai
 from google.genai import types as genai_types
 
 from agents.specialists.base_agent import flash_model_name
+from lib.gemini import make_gemini_client
 from lib.prompts import BUDGET_AGENT_SYSTEM
 from lib.types import IntakeForm
 
 
 def _make_client() -> genai.Client:
-    return genai.Client(api_key=os.getenv("GEMINI_API_KEY", ""))
+    return make_gemini_client()
 
 
 class BudgetAgent:

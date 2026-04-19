@@ -184,6 +184,7 @@ export default function GeneratePage() {
               error?: string;
             };
             if (payload.error || !payload.plan) {
+              console.error("Plan generation failed", payload.error ?? "Missing plan payload");
               setError(payload.error ?? "Plan generation was interrupted. Please try again.");
               return;
             }
@@ -215,8 +216,10 @@ export default function GeneratePage() {
     } catch (e) {
       if (signal.aborted) return; // StrictMode cleanup — ignore silently
       if (e instanceof TypeError && e.message.toLowerCase().includes("fetch")) {
+        console.error("Backend fetch failed", e);
         setError("Cannot reach the backend server. Make sure the API is running on port 8000.");
       } else {
+        console.error("Unexpected generation error", e);
         setError("Something went wrong generating your plan. Please try again.");
       }
     }

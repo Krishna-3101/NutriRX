@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 from typing import Any, AsyncIterator
 
@@ -20,8 +21,11 @@ from agents.specialists.pediatric import PediatricAgent
 from agents.specialists.postpartum import PostpartumAgent
 from agents.specialists.prediabetes import PrediabetesAgent
 from agents.specialists.pregnancy import PregnancyAgent
+from lib.gemini import is_fatal_gemini_error, make_gemini_client
 from lib.prompts import ORCHESTRATOR_SYSTEM
 from lib.types import IntakeForm
+
+logger = logging.getLogger(__name__)
 
 ALL_SPECIALISTS: list[type] = [
     DiabetesAgent,
@@ -42,7 +46,7 @@ def pro_model_name() -> str:
 
 
 def _make_client() -> genai.Client:
-    return genai.Client(api_key=os.getenv("GEMINI_API_KEY", ""))
+    return make_gemini_client()
 
 
 async def run_pipeline(intake: IntakeForm) -> AsyncIterator[dict[str, Any]]:
@@ -70,6 +74,9 @@ async def run_pipeline(intake: IntakeForm) -> AsyncIterator[dict[str, Any]]:
         try:
             result = await agent.run(intake, member)
         except Exception as exc:  # noqa: BLE001
+            logger.exception("Specialist %s failed for member %s", agent.agent_name, member.nickname)
+            if is_fatal_gemini_error(exc):
+                raise RuntimeError(str(exc)) from exc
             result = {
                 "clinical_priority": "Model error — using conservative defaults.",
                 "nutrient_targets": {},
@@ -112,6 +119,9 @@ Household profile:
     try:
         negotiation = await asyncio.to_thread(_negotiate)
     except Exception as exc:  # noqa: BLE001
+        logger.exception("Negotiation step failed")
+        if is_fatal_gemini_error(exc):
+            raise RuntimeError(str(exc)) from exc
         negotiation = {
             "conflicts_found": [],
             "merged_targets": {},
@@ -155,6 +165,9 @@ Household profile:
             "message": f"Generated {len(meal_plan)} culturally-authentic meals.",
         }
     except Exception as exc:  # noqa: BLE001
+        logger.exception("Cultural agent failed")
+        if is_fatal_gemini_error(exc):
+            raise RuntimeError(str(exc)) from exc
         meal_plan = []
         yield {
             "agent": "CulturalAgent",
@@ -177,6 +190,9 @@ Household profile:
             "message": f"Shopping list built. Estimated total: ${total:.2f}",
         }
     except Exception as exc:  # noqa: BLE001
+        logger.exception("Budget agent failed")
+        if is_fatal_gemini_error(exc):
+            raise RuntimeError(str(exc)) from exc
         shopping = {"categories": [], "total_estimated_cost": 0.0, "exceeds_snap_budget": False}
         yield {
             "agent": "BudgetAgent",

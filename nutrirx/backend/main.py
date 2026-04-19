@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
 import uuid
 from contextlib import asynccontextmanager
@@ -17,11 +18,14 @@ from sse_starlette.sse import EventSourceResponse
 from agents.functions.grading import GradingAgent
 from agents.orchestrator import run_pipeline
 from db.database import DB_PATH, init_db
+from lib.gemini import user_facing_generation_error
 from lib.types import IntakeForm
 from tools.unsplash import fetch_food_image
 from tools.vision import ocr_receipt
 
 load_dotenv()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -65,13 +69,13 @@ async def generate_plan(request: GenerateRequest):
                     plan_data = update.pop("_plan_data")
                 yield {"event": "agent_update", "data": json.dumps(update)}
         except Exception as exc:  # noqa: BLE001
+            logger.exception("Plan generation failed for intake %s", intake_id)
             yield {
-                "event": "agent_update",
+                "event": "complete",
                 "data": json.dumps(
                     {
-                        "agent": "Orchestrator",
-                        "status": "done",
-                        "message": f"Pipeline error: {exc!s}",
+                        "plan_id": plan_id,
+                        "error": user_facing_generation_error(exc),
                     }
                 ),
             }

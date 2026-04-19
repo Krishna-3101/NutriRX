@@ -8,6 +8,7 @@ from typing import Any
 import google.genai as genai
 from google.genai import types as genai_types
 
+from lib.gemini import make_gemini_client
 from lib.types import HouseholdMember, IntakeForm
 
 
@@ -16,7 +17,7 @@ def flash_model_name() -> str:
 
 
 def _make_client() -> genai.Client:
-    return genai.Client(api_key=os.getenv("GEMINI_API_KEY", ""))
+    return make_gemini_client()
 
 
 class BaseSpecialistAgent:
