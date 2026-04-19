@@ -1,6 +1,6 @@
 # NutriRx
 
-NutriRx is a full-stack web application designed to generate personalized clinical nutrition targets and meal plans based on a patient's health parameters, dietary preferences, and budget constraints (e.g., SNAP, WIC). It leverages the power of Google's Gemini models to tailor these meal plans and provides a feature to grade grocery receipts against the generated plans.
+NutriRx is a web application designed to generate personalized nutrition targets and meal plans based on a patient's health parameters, dietary preferences, and budget constraints (e.g., SNAP, WIC). It leverages the power of Google's Gemini models to tailor these meal plans and create grocery lists.
 
 ## Features
 
